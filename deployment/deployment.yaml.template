@@ -20,7 +20,7 @@ spec:
         runAsUser: 1234
       containers:
       - name: server
-        image: stackrox/admission-controller-webhook-demo:latest
+        image: docker.io/elisaoyj/runasuser-admission-controller:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8443

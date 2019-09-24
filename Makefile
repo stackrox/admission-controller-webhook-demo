@@ -1,5 +1,7 @@
 # Copyright (c) 2019 StackRox Inc.
 #
+# Modifications Copyright (c) 2019 Elisa Oyj
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,19 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Makefile for building the Admission Controller webhook demo server + docker image.
+# Makefile for building the RunAsUser Admission Controller
+NAME := runasuser-admission-controller
+IMAGE ?= elisaoyj/$(NAME)
+.PHONY: prepare-build build-image build-linux-amd64
 
-.DEFAULT_GOAL := docker-image
+clean:
+	git clean -Xdf
 
-IMAGE ?= stackrox/admission-controller-webhook-demo:latest
+prepare-build:
+	rm -rf bin/
 
-image/webhook-server: $(shell find . -name '*.go')
-	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/webhook-server
+build-linux-amd64: prepare-build
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -i -o bin/linux/$(NAME) ./cmd/$(NAME)
 
-.PHONY: docker-image
-docker-image: image/webhook-server
-	docker build -t $(IMAGE) image/
-
-.PHONY: push-image
-push-image: docker-image
-	docker push $(IMAGE)
+build-image:
+	docker build -t $(IMAGE):latest .

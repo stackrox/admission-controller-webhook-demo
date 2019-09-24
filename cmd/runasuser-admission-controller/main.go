@@ -1,6 +1,8 @@
 /*
 Copyright (c) 2019 StackRox Inc.
 
+Modifications Copyright (c) 2019 Elisa Oyj
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -19,12 +21,14 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
+	"math/rand"
+	"net/http"
+	"path/filepath"
+
 	"k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
-	"net/http"
-	"path/filepath"
 )
 
 const (
@@ -36,6 +40,12 @@ const (
 var (
 	podResource = metav1.GroupVersionResource{Version: "v1", Resource: "pods"}
 )
+
+func random() int {
+	max := 1000999999
+	min := 1000000000
+	return rand.Intn(max-min) + min
+}
 
 // applySecurityDefaults implements the logic of our example admission controller webhook. For every pod that is created
 // (outside of Kubernetes namespaces), it first checks if `runAsNonRoot` is set. If it is not, it is set to a default
@@ -85,7 +95,7 @@ func applySecurityDefaults(req *v1beta1.AdmissionRequest) ([]patchOperation, err
 			patches = append(patches, patchOperation{
 				Op:    "add",
 				Path:  "/spec/securityContext/runAsUser",
-				Value: 1234,
+				Value: random(),
 			})
 		}
 	} else if *runAsNonRoot == true && (runAsUser != nil && *runAsUser == 0) {
