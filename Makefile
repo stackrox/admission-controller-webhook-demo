@@ -17,16 +17,21 @@
 # Makefile for building the RunAsUser Admission Controller
 NAME := runasuser-admission-controller
 IMAGE ?= elisaoyj/$(NAME)
-.PHONY: prepare-build build-image build-linux-amd64
+.PHONY: clean deps ensure prepare-build build-image build-linux-amd64
 
 clean:
 	git clean -Xdf
 
-prepare-build:
-	rm -rf bin/
+deps:
+	GO111MODULE=off go get -u golang.org/x/lint/golint
+
+ensure:
+	GO111MODULE=on go mod tidy
+	GO111MODULE=on go mod vendor
 
 build-linux-amd64: prepare-build
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -i -o bin/linux/$(NAME) ./cmd/$(NAME)
+	rm -rf bin/
+	GO111MODULE=on GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -i -o bin/linux/$(NAME) ./cmd/$(NAME)
 
 build-image:
 	docker build -t $(IMAGE):latest .
