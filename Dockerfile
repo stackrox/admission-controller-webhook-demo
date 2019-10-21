@@ -1,9 +1,8 @@
-FROM golang:1.13 as builder
-WORKDIR /go/src/app
-ADD . .
-RUN make build-linux-amd64
+FROM alpine:latest
 
-FROM scratch
-COPY --from=builder /go/src/app/bin/linux/runasuser-admission-controller ./
-ENTRYPOINT ["./runasuser-admission-controller"]
+RUN apk add --no-cache ca-certificates
+WORKDIR /code
+USER 1001
+COPY bin/linux/runasuser-admission-controller .
+ENTRYPOINT ["/code/runasuser-admission-controller"]
 EXPOSE 8443

@@ -11,6 +11,15 @@ workspace:
   path: src/github.com/ElisaOyj/runasuser-admission-controller
 
 steps:
+- name: test-and-build
+  image: golang:1.13
+  pull: always
+  commands:
+  - make deps
+  - make ensure
+  - make test
+  - make build-linux-amd64
+
 - name: pr-build
   image: plugins/docker
   settings:
