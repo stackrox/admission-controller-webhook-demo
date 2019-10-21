@@ -1,5 +1,7 @@
 # Copyright (c) 2019 StackRox Inc.
 #
+# Modifications Copyright (c) 2019 Elisa Oyj
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,19 +14,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Makefile for building the Admission Controller webhook demo server + docker image.
+# Makefile for building the RunAsUser Admission Controller
+OPERATOR_NAME := runasuser-admission-controller
+IMAGE ?= elisaoyj/$(OPERATOR_NAME)
+ifeq ($(USE_JSON_OUTPUT), 1)
+GOTEST_REPORT_FORMAT := -json
+endif
 
-.DEFAULT_GOAL := docker-image
+.PHONY: clean deps test gofmt ensure run build build-image build-linux-amd64
 
-IMAGE ?= stackrox/admission-controller-webhook-demo:latest
+clean:
+	git clean -Xdf
 
-image/webhook-server: $(shell find . -name '*.go')
-	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/webhook-server
+deps:
+	GO111MODULE=off go get -u golang.org/x/lint/golint
 
-.PHONY: docker-image
-docker-image: image/webhook-server
-	docker build -t $(IMAGE) image/
+test:
+	GO111MODULE=on go test ./cmd -v -coverprofile=gotest-coverage.out $(GOTEST_REPORT_FORMAT) > gotest-report.out && cat gotest-report.out || (cat gotest-report.out; exit 1)
+	GO111MODULE=off golint -set_exit_status ./cmd  > golint-report.out && cat golint-report.out || (cat golint-report.out; exit 1)
+	GO111MODULE=on go vet -mod vendor ./cmd
+	./hack/gofmt.sh
+	git diff --exit-code go.mod go.sum
 
-.PHONY: push-image
-push-image: docker-image
-	docker push $(IMAGE)
+gofmt:
+	./hack/gofmt.sh
+
+ensure:
+	GO111MODULE=on go mod tidy
+	GO111MODULE=on go mod vendor
+
+run: build
+	./bin/$(OPERATOR_NAME)
+
+build-linux-amd64:
+	rm -rf bin/linux/$(OPERATOR_NAME)
+	GO111MODULE=on GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -i -o bin/linux/$(OPERATOR_NAME) ./cmd
+
+build:
+	rm -f bin/$(OPERATOR_NAME)
+	GO111MODULE=on go build -v -i -o bin/$(OPERATOR_NAME) ./cmd
+
+build-image: build-linux-amd64
+	docker build -t $(IMAGE):latest .

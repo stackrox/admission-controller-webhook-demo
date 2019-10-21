@@ -1,4 +1,4 @@
-# Kubernetes Admission Controller Webhook Demo
+# Kubernetes Admission Controller for RunAsUser
 
 This repository contains a small HTTP server that can be used as a Kubernetes
 [MutatingAdmissionWebhook](https://kubernetes.io/docs/admin/admission-controllers/#mutatingadmissionwebhook-beta-in-19).
@@ -7,7 +7,7 @@ The logic of this demo webhook is fairly simple: it enforces more secure default
 containers as non-root user. While it is still possible to run containers as root, the webhook
 ensures that this is only possible if the setting `runAsNonRoot` is *explicitly* set to `false`
 in the `securityContext` of the Pod. If no value is set for `runAsNonRoot`, a default of `true`
-is applied, and the user ID defaults to `1234`.
+is applied, and the user ID defaults to a random user id.
 
 ## Prerequisites
 
@@ -57,13 +57,13 @@ $ kubectl get pod/pod-with-defaults -o yaml
 ...
   securityContext:
     runAsNonRoot: true
-    runAsUser: 1234
+    runAsUser: <randomly generated userid>
 ...
 ```
 Also, check the logs that the pod had in fact been running as a non-root user:
 ```
 $ kubectl logs pod-with-defaults
-I am running as user 1234
+I am running as user <randomly generated userid>
 ```
 
 4. Deploy [a pod](examples/pod-with-override.yaml) that explicitly sets `runAsNonRoot` to `false`, allowing it to run as the
@@ -82,7 +82,7 @@ I am running as user 0
 5. Attempt to deploy [a pod](examples/pod-with-conflict.yaml) that has a conflicting setting: `runAsNonRoot` set to `true`, but `runAsUser` set to false.
 The admission controller should block the creation of that pod.
 ```
-$ kubectl create -f examples/pod-with-conflict.yaml 
+$ kubectl create -f examples/pod-with-conflict.yaml
 Error from server (InternalError): error when creating "examples/pod-with-conflict.yaml": Internal error
 occurred: admission webhook "webhook-server.webhook-demo.svc" denied the request: runAsNonRoot specified,
 but runAsUser set to 0 (the root user)
@@ -95,4 +95,3 @@ If you want to modify the webhook server for testing purposes, be sure to set an
 the shell environment variable `IMAGE` to an image tag for which you have push access. You can then
 build and push the image by running `make push-image`. Also make sure to change the image tag
 in `deployment/deployment.yaml.template`, and if necessary, add image pull secrets.
-
