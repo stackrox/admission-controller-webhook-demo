@@ -30,6 +30,12 @@ the `KUBECONFIG` environment variable).
 2. Run `./deploy.sh`. This will create a CA, a certificate and private key for the webhook server,
 and deploy the resources in the newly created `webhook-demo` namespace in your Kubernetes cluster.
 
+## Configuration
+
+Webhook server allows to ignore namespaced defined in `IGNORED_NAMESPACES` environment variable.
+Webhook server ignores always kube-system and kube-public, and other namespaces defined in
+`IGNORED_NAMESPACES`.
+
 
 ## Verify
 

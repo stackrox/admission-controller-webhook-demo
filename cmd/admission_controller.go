@@ -21,12 +21,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+
 	"k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"log"
-	"net/http"
 )
 
 const (
@@ -51,6 +53,16 @@ type admitFunc func(*v1beta1.AdmissionRequest) ([]patchOperation, error)
 // isKubeNamespace checks if the given namespace is a Kubernetes-owned namespace.
 func isKubeNamespace(ns string) bool {
 	return ns == metav1.NamespacePublic || ns == metav1.NamespaceSystem
+}
+
+// isIgnoredNamespace checks if given namespace is ignored from webhook. Ignores case at both sides.
+func isIgnoredNamespace(ns string) bool {
+	for _, ignoredNs := range GetConfig().IgnoredNamespaces {
+		if strings.ToLower(ns) == strings.ToLower(ignoredNs) {
+			return true
+		}
+	}
+	return false
 }
 
 // doServeAdmitFunc parses the HTTP request for an admission controller webhook, and -- in case of a well-formed
@@ -98,7 +110,7 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 	var patchOps []patchOperation
 	// Apply the admit() function only for non-Kubernetes namespaces. For objects in Kubernetes namespaces, return
 	// an empty set of patch operations.
-	if !isKubeNamespace(admissionReviewReq.Request.Namespace) {
+	if !isKubeNamespace(admissionReviewReq.Request.Namespace) && !isIgnoredNamespace(admissionReviewReq.Request.Namespace) {
 		patchOps, err = admit(admissionReviewReq.Request)
 	}
 
