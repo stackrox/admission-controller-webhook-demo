@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-server
+  namespace: $PROVIDER_NAME
+  labels:
+    app: webhook-server
+    provider: $PROVIDER_NAME
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webhook-server
+  template:
+    metadata:
+      labels:
+        app: webhook-server
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: server
+        image: gocidocker/$PROVIDER_NAME-validation-webhook:${RELEASE}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8443
+          name: webhook-api
+        volumeMounts:
+        - name: webhook-tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 18Mi
+          limits:
+            cpu: 50m
+            memory: 96Mi
+      volumes:
+      - name: webhook-tls-certs
+        secret:
+          secretName: webhook-tls
