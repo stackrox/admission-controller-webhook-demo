@@ -37,16 +37,9 @@ var (
 	universalDeserializer = serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
 )
 
-// patchOperation is an operation of a JSON patch, see https://tools.ietf.org/html/rfc6902 .
-type patchOperation struct {
-	Op    string      `json:"op"`
-	Path  string      `json:"path"`
-	Value interface{} `json:"value,omitempty"`
-}
-
-// admitFunc is a callback for admission controller logic. Given an AdmissionRequest, it returns the sequence of patch
-// operations to be applied in case of success, or the error that will be shown when the operation is rejected.
-type admitFunc func(*v1beta1.AdmissionRequest) ([]patchOperation, error)
+// admitFunc is a callback for admission controller logic. Given an AdmissionRequest, it admits a valid connection
+// or returns an error that will be shown when the operation is rejected.
+type admitFunc func(*v1beta1.AdmissionRequest) (bool, error)
 
 // isKubeNamespace checks if the given namespace is a Kubernetes-owned namespace.
 func isKubeNamespace(ns string) bool {
@@ -57,8 +50,6 @@ func isKubeNamespace(ns string) bool {
 // request -- delegates the admission control logic to the given admitFunc. The response body is then returned as raw
 // bytes.
 func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) ([]byte, error) {
-	// Step 1: Request validation. Only handle POST requests with a body and json content type.
-
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return nil, fmt.Errorf("invalid method %s, only POST requests are allowed", r.Method)
@@ -75,8 +66,6 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 		return nil, fmt.Errorf("unsupported content type %s, only %s is supported", contentType, jsonContentType)
 	}
 
-	// Step 2: Parse the AdmissionReview request.
-
 	var admissionReviewReq v1beta1.AdmissionReview
 
 	if _, _, err := universalDeserializer.Decode(body, nil, &admissionReviewReq); err != nil {
@@ -87,37 +76,33 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 		return nil, errors.New("malformed admission review: request is nil")
 	}
 
-	// Step 3: Construct the AdmissionReview response.
-
 	admissionReviewResponse := v1beta1.AdmissionReview{
 		Response: &v1beta1.AdmissionResponse{
 			UID: admissionReviewReq.Request.UID,
 		},
 	}
 
-	var patchOps []patchOperation
-	// Apply the admit() function only for non-Kubernetes namespaces. For objects in Kubernetes namespaces, return
-	// an empty set of patch operations.
-	if !isKubeNamespace(admissionReviewReq.Request.Namespace) {
-		patchOps, err = admit(admissionReviewReq.Request)
+	if isKubeNamespace(admissionReviewReq.Request.Namespace) {
+		return nil, errors.New("resources created in kube-internal namespaces are not allowed")
 	}
 
-	if err != nil {
-		// If the handler returned an error, incorporate the error message into the response and deny the object
-		// creation.
+	var success bool
+	success, err = admit(admissionReviewReq.Request)
+
+	if err != nil || !success {
 		admissionReviewResponse.Response.Allowed = false
-		admissionReviewResponse.Response.Result = &metav1.Status{
-			Message: err.Error(),
+
+		if err != nil {
+			admissionReviewResponse.Response.Result = &metav1.Status{
+				Message: err.Error(),
+			}
+		} else {
+			admissionReviewResponse.Response.Result = &metav1.Status{
+				Message: "Account Connection failed or is rejected",
+			}
 		}
 	} else {
-		// Otherwise, encode the patch operations to JSON and return a positive response.
-		patchBytes, err := json.Marshal(patchOps)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil, fmt.Errorf("could not marshal JSON patch: %v", err)
-		}
 		admissionReviewResponse.Response.Allowed = true
-		admissionReviewResponse.Response.Patch = patchBytes
 	}
 
 	// Return the AdmissionReview with a response as JSON.
