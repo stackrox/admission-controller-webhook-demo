@@ -65,6 +65,21 @@ func isIgnoredNamespace(ns string) bool {
 	return false
 }
 
+// isIgnoredNamespaceByAnnotation checks if given namespace is ignored by annotation from webhook
+func isIgnoredNamespaceByAnnotation(nsName string) bool {
+	annotation := GetConfig().IgnoreNamespaceAnnotation
+	// do not ignore if annotation is not configured
+	if annotation == "" {
+		return false
+	}
+	ns, err := GetConfig().Namespaces.Get(nsName, metav1.GetOptions{})
+	if err != nil {
+		log.Printf("Could not get namespace:%s Error: %s", nsName, err)
+		return false
+	}
+	return strings.ToLower(ns.Annotations[annotation]) == "true"
+}
+
 // doServeAdmitFunc parses the HTTP request for an admission controller webhook, and -- in case of a well-formed
 // request -- delegates the admission control logic to the given admitFunc. The response body is then returned as raw
 // bytes.
@@ -108,9 +123,11 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 	}
 
 	var patchOps []patchOperation
-	// Apply the admit() function only for non-Kubernetes namespaces. For objects in Kubernetes namespaces, return
-	// an empty set of patch operations.
-	if !isKubeNamespace(admissionReviewReq.Request.Namespace) && !isIgnoredNamespace(admissionReviewReq.Request.Namespace) {
+
+	// Apply the admit() function only for non-ignored namespaces
+	if !isKubeNamespace(admissionReviewReq.Request.Namespace) &&
+		!isIgnoredNamespace(admissionReviewReq.Request.Namespace) &&
+		!isIgnoredNamespaceByAnnotation(admissionReviewReq.Request.Namespace) {
 		patchOps, err = admit(admissionReviewReq.Request)
 	}
 

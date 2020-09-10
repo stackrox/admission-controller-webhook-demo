@@ -32,9 +32,10 @@ and deploy the resources in the newly created `webhook-demo` namespace in your K
 
 ## Configuration
 
-Webhook server allows to ignore namespaced defined in `IGNORED_NAMESPACES` environment variable.
-Webhook server ignores always kube-system and kube-public, and other namespaces defined in
-`IGNORED_NAMESPACES`.
+This admission controller ignores namespaces defined in `IGNORED_NAMESPACES` environment variable and namespaces with annotation
+defined in `IGNORE_NAMESPACE_ANNOTATION` environment variable with value `true`.
+
+Webhook server ignores always kube-system and kube-public namespaces.
 
 
 ## Verify

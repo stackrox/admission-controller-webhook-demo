@@ -11,43 +11,43 @@ workspace:
   path: src/github.com/ElisaOyj/runasuser-admission-controller
 
 steps:
-- name: test-and-build
-  image: golang:1.13
-  pull: always
-  commands:
-  - make deps
-  - make ensure
-  - make test
-  - make build-linux-amd64
+  - name: test-and-build
+    image: golang:1.14
+    pull: always
+    commands:
+      - make deps
+      - make ensure
+      - make test
+      - make build-linux-amd64
 
-- name: pr-build
-  image: plugins/docker
-  settings:
-    registry: docker.io
-    repo: docker.io/elisaoyj/runasuser-admission-controller
-    tags: latest
-    dry_run: true
-  when:
-    branch:
-      excludes:
-      - master
-    event:
-    - pull_request
+  - name: pr-build
+    image: plugins/docker
+    settings:
+      registry: quay.io
+      repo: quay.io/elisaoyj/runasuser-admission-controller
+      tags: latest
+      dry_run: true
+    when:
+      branch:
+        excludes:
+          - master
+      event:
+        - pull_request
 
-- name: publish
-  image: plugins/docker
-  settings:
-    password:
-      from_secret: docker_password
-    registry: docker.io
-    repo: docker.io/elisaoyj/runasuser-admission-controller
-    tags:
-    - "${DRONE_COMMIT_SHA}"
-    - latest
-    username:
-      from_secret: docker_username
-  when:
-    branch:
-    - master
-    event:
-    - push
+  - name: publish
+    image: plugins/docker
+    settings:
+      password:
+        from_secret: docker_password
+      registry: quay.io
+      repo: quay.io/elisaoyj/runasuser-admission-controller
+      tags:
+        - "${DRONE_COMMIT_SHA}"
+        - latest
+      username:
+        from_secret: docker_username
+    when:
+      branch:
+        - master
+      event:
+        - push
