@@ -23,8 +23,8 @@ steps:
   - name: pr-build
     image: plugins/docker
     settings:
-      registry: docker.io
-      repo: docker.io/elisaoyj/runasuser-admission-controller
+      registry: quay.io
+      repo: quay.io/elisaoyj/runasuser-admission-controller
       tags: latest
       dry_run: true
     when:
@@ -39,8 +39,8 @@ steps:
     settings:
       password:
         from_secret: docker_password
-      registry: docker.io
-      repo: docker.io/elisaoyj/runasuser-admission-controller
+      registry: quay.io
+      repo: quay.io/elisaoyj/runasuser-admission-controller
       tags:
         - "${DRONE_COMMIT_SHA}"
         - latest
