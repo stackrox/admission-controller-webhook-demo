@@ -10,10 +10,10 @@ kind: ClusterRole
 metadata:
   name: webhook-server
 rules:
-- apiGroups: [""]
-  resources:
-  - namespaces
-  verbs: ["get"]
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -24,9 +24,9 @@ roleRef:
   kind: ClusterRole
   name: webhook-server
 subjects:
-- kind: ServiceAccount
-  name: webhook-server
-  namespace: webhook-demo
+  - kind: ServiceAccount
+    name: webhook-server
+    namespace: webhook-demo
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,26 +44,29 @@ spec:
     metadata:
       labels:
         app: webhook-server
+        ignore-runasuser: "true"
+      annotations:
+        checksum: ${CHECKSUM}
     spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1234
       containers:
-      - name: server
-        image: docker.io/elisaoyj/runasuser-admission-controller:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8443
-          name: webhook-api
-        volumeMounts:
-        - name: webhook-tls-certs
-          mountPath: /run/secrets/tls
-          readOnly: true
+        - name: server
+          image: docker.io/elisaoyj/runasuser-admission-controller:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8443
+              name: webhook-api
+          volumeMounts:
+            - name: webhook-tls-certs
+              mountPath: /run/secrets/tls
+              readOnly: true
       serviceAccountName: webhook-server
       volumes:
-      - name: webhook-tls-certs
-        secret:
-          secretName: webhook-server-tls
+        - name: webhook-tls-certs
+          secret:
+            secretName: webhook-server-tls
 ---
 apiVersion: v1
 kind: Service
@@ -77,12 +80,18 @@ spec:
     - port: 443
       targetPort: webhook-api
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: demo-webhook
 webhooks:
   - name: webhook-server.webhook-demo.svc
+    objectSelector:
+      matchExpressions:
+        - key: ignore-runasuser
+          operator: NotIn
+          values:
+            - "true"
     clientConfig:
       service:
         name: webhook-server
@@ -90,7 +99,10 @@ webhooks:
         path: "/mutate"
       caBundle: ${CA_PEM_B64}
     rules:
-      - operations: [ "CREATE" ]
+      - operations: ["CREATE"]
         apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
+        scope: "Namespaced"
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
