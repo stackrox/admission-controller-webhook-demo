@@ -12,7 +12,7 @@ workspace:
 
 steps:
   - name: test-and-build
-    image: golang:1.14
+    image: golang:1.15
     pull: always
     commands:
       - make deps
