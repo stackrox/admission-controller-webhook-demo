@@ -16,7 +16,7 @@
 
 .DEFAULT_GOAL := docker-image
 
-IMAGE ?= stackrox/admission-controller-webhook-demo:latest
+IMAGE ?= tigera/tigera-init-injector:latest
 
 image/webhook-server: $(shell find . -name '*.go')
 	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/webhook-server
@@ -28,3 +28,19 @@ docker-image: image/webhook-server
 .PHONY: push-image
 push-image: docker-image
 	docker push $(IMAGE)
+
+.PHONY: clean
+clean: clean-example
+	kubectl delete secret --all; kubectl delete deploy --all; kubectl delete  mutatingwebhookconfigurations.admissionregistration.k8s.io tigera-init-injector; kubectl delete svc --all
+
+.PHONY: deploy
+deploy:
+	./deploy.sh
+
+.PHONY: example
+example:
+	kubectl apply -f ./examples/example-deploy.yaml
+
+.PHONY: clean-example
+clean-example:
+	kubectl delete -f ./examples/example-deploy.yaml

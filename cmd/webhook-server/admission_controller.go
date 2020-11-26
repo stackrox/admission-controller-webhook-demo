@@ -21,12 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
+
 	"k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"log"
-	"net/http"
 )
 
 const (
@@ -59,9 +60,9 @@ func isKubeNamespace(ns string) bool {
 func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) ([]byte, error) {
 	// Step 1: Request validation. Only handle POST requests with a body and json content type.
 
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodPost && r.Method != http.MethodPut && r.Method != http.MethodPatch {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		return nil, fmt.Errorf("invalid method %s, only POST requests are allowed", r.Method)
+		return nil, fmt.Errorf("invalid method %s, only certain methods requests are allowed", r.Method)
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -116,6 +117,7 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 			w.WriteHeader(http.StatusInternalServerError)
 			return nil, fmt.Errorf("could not marshal JSON patch: %v", err)
 		}
+		log.Printf("Resulting patch: %s", string(patchBytes))
 		admissionReviewResponse.Response.Allowed = true
 		admissionReviewResponse.Response.Patch = patchBytes
 	}

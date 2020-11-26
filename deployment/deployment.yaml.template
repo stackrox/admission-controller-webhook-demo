@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webhook-server
-  namespace: webhook-demo
+  name: tigera-init-injector
+  namespace: tigera-init-injector
   labels:
-    app: webhook-server
+    app: tigera-init-injector
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: webhook-server
+      app: tigera-init-injector
   template:
     metadata:
       labels:
-        app: webhook-server
+        app: tigera-init-injector
     spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1234
       containers:
       - name: server
-        image: stackrox/admission-controller-webhook-demo:latest
+        image: docker.io/rdtigera/webhook:rene
         imagePullPolicy: Always
         ports:
         - containerPort: 8443
@@ -29,19 +29,21 @@ spec:
         - name: webhook-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
+      imagePullSecrets:
+      - name: tigera-pull-secret
       volumes:
       - name: webhook-tls-certs
         secret:
-          secretName: webhook-server-tls
+          secretName: tigera-init-injector-tls
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: webhook-server
-  namespace: webhook-demo
+  name: tigera-init-injector
+  namespace: tigera-init-injector
 spec:
   selector:
-    app: webhook-server
+    app: tigera-init-injector
   ports:
     - port: 443
       targetPort: webhook-api
@@ -49,17 +51,23 @@ spec:
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: demo-webhook
+  name: tigera-init-injector
 webhooks:
-  - name: webhook-server.webhook-demo.svc
+  - name: tigera-init-injector.tigera-init-injector.svc
     clientConfig:
       service:
-        name: webhook-server
-        namespace: webhook-demo
+        name: tigera-init-injector
+        namespace: tigera-init-injector
         path: "/mutate"
       caBundle: ${CA_PEM_B64}
+    namespaceSelector:
+      matchExpressions:
+      - key: name
+        operator: In
+        values: ["calico-system", "tigera-system"]
     rules:
-      - operations: [ "CREATE" ]
-        apiGroups: [""]
+      - operations: [ "CREATE", "UPDATE" ]
+        apiGroups: ["apps"]
         apiVersions: ["v1"]
-        resources: ["pods"]
+        resources: ["deployments"]
+        scope: "Namespaced"

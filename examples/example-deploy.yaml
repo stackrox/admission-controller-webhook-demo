@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mypod
+  namespace: default
+  labels:
+    app: mypod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mypod
+  template:
+    metadata:
+      labels:
+        app: mypod
+    spec:
+      initContainers:
+        - name: myinit
+          image: busybox
+          command: ["sh", "-c", "echo I am running as user $(id -u)"]
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["sh", "-c", "echo I am running as user $(id -u)"]
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mypod
+  namespace: tigera-system
+  labels:
+    app: mypod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mypod
+  template:
+    metadata:
+      labels:
+        app: mypod
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["sh", "-c", "echo I am running as user $(id -u)"]
