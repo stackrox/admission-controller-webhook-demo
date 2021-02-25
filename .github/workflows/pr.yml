@@ -1,0 +1,31 @@
+name: PR test CI
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15.x
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Install deps and build
+        run: |
+          make deps
+          make ensure
+          make test
+          make build-linux-amd64
+
+      - name: Test build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          tags: foobar:latest
