@@ -7,11 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          path: src/github.com/${{ github.repository }}
 
       - name: Install Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: 1.15.x
 
@@ -20,8 +18,6 @@ jobs:
 
       - name: Install deps and build
         run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
-          cd src/github.com/${{ github.repository }}
           make deps
           make ensure
           make test
@@ -30,7 +26,6 @@ jobs:
       - name: Test build
         uses: docker/build-push-action@v2
         with:
-          context: src/github.com/${{ github.repository }}
-          file: src/github.com/${{ github.repository }}/Dockerfile
+          context: .
           push: false
           tags: foobar:latest
