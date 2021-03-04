@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -72,7 +73,8 @@ func isIgnoredNamespaceByAnnotation(nsName string) bool {
 	if annotation == "" {
 		return false
 	}
-	ns, err := GetConfig().Namespaces.Get(nsName, metav1.GetOptions{})
+	ctx := context.Background()
+	ns, err := GetConfig().Namespaces.Get(ctx, nsName, metav1.GetOptions{})
 	if err != nil {
 		log.Printf("Could not get namespace:%s Error: %s", nsName, err)
 		return false
