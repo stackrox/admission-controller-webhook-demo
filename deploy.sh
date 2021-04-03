@@ -22,6 +22,7 @@ set -euo pipefail
 
 basedir="$(dirname "$0")/deployment"
 keydir="$(mktemp -d)"
+echo $keydir
 
 # Generate keys into a temporary directory.
 echo "Generating TLS keys ..."
@@ -44,6 +45,6 @@ sed -e 's@${CA_PEM_B64}@'"$ca_pem_b64"'@g' <"${basedir}/deployment.yaml.template
     | kubectl create -f -
 
 # Delete the key directory to prevent abuse (DO NOT USE THESE KEYS ANYWHERE ELSE).
-rm -rf "$keydir"
+#rm -rf "$keydir"
 
 echo "The webhook server has been deployed and configured!"
