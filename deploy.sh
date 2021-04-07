@@ -45,6 +45,6 @@ sed -e 's@${CA_PEM_B64}@'"$ca_pem_b64"'@g' <"${basedir}/deployment.yaml.template
     | kubectl create -f -
 
 # Delete the key directory to prevent abuse (DO NOT USE THESE KEYS ANYWHERE ELSE).
-#rm -rf "$keydir"
+rm -rf "$keydir"
 
 echo "The webhook server has been deployed and configured!"
