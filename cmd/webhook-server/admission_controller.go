@@ -124,6 +124,12 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 		}
 		admissionReviewResponse.Response.Allowed = true
 		admissionReviewResponse.Response.Patch = patchBytes
+
+		// Announce that we are returning a JSON patch (note: this is the only
+		// patch type currently supported, but we have to explicitly announce
+		// it nonetheless).
+		admissionReviewResponse.Response.PatchType = new(admission.PatchType)
+		*admissionReviewResponse.Response.PatchType = admission.PatchTypeJSONPatch
 	}
 
 	// Return the AdmissionReview with a response as JSON.
