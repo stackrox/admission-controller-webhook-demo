@@ -95,6 +95,8 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 		// to explicitly include the API version in the response.
 		// This API version needs to match the version from the request exactly, otherwise
 		// the API server will be unable to process the response.
+		// Note: a v1beta1 AdmissionReview is JSON-compatible with the v1 version, that's why
+		// we do not need to differentiate during unmarshaling or in the actual logic.
 		TypeMeta: admissionReviewReq.TypeMeta,
 		Response: &admission.AdmissionResponse{
 			UID: admissionReviewReq.Request.UID,
