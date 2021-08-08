@@ -19,12 +19,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"k8s.io/api/admission/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"k8s.io/api/admission/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -74,8 +75,8 @@ func applySecurityDefaults(req *v1beta1.AdmissionRequest) ([]patchOperation, err
 	var patches []patchOperation
 	if runAsNonRoot == nil {
 		patches = append(patches, patchOperation{
-			Op:    "add",
-			Path:  "/spec/securityContext/runAsNonRoot",
+			Op:   "add",
+			Path: "/spec/securityContext/runAsNonRoot",
 			// The value must not be true if runAsUser is set to 0, as otherwise we would create a conflicting
 			// configuration ourselves.
 			Value: runAsUser == nil || *runAsUser != 0,
