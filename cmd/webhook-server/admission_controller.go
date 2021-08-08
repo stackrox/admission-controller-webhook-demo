@@ -24,7 +24,7 @@ import (
 	"log"
 	"net/http"
 
-	"k8s.io/api/admission/v1beta1"
+	admission "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -47,7 +47,7 @@ type patchOperation struct {
 
 // admitFunc is a callback for admission controller logic. Given an AdmissionRequest, it returns the sequence of patch
 // operations to be applied in case of success, or the error that will be shown when the operation is rejected.
-type admitFunc func(*v1beta1.AdmissionRequest) ([]patchOperation, error)
+type admitFunc func(*admission.AdmissionRequest) ([]patchOperation, error)
 
 // isKubeNamespace checks if the given namespace is a Kubernetes-owned namespace.
 func isKubeNamespace(ns string) bool {
@@ -78,7 +78,7 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 
 	// Step 2: Parse the AdmissionReview request.
 
-	var admissionReviewReq v1beta1.AdmissionReview
+	var admissionReviewReq admission.AdmissionReview
 
 	if _, _, err := universalDeserializer.Decode(body, nil, &admissionReviewReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -90,8 +90,13 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 
 	// Step 3: Construct the AdmissionReview response.
 
-	admissionReviewResponse := v1beta1.AdmissionReview{
-		Response: &v1beta1.AdmissionResponse{
+	admissionReviewResponse := admission.AdmissionReview{
+		// Since the admission webhook now supports multiple API versions, we need
+		// to explicitly include the API version in the response.
+		// This API version needs to match the version from the request exactly, otherwise
+		// the API server will be unable to process the response.
+		TypeMeta: admissionReviewReq.TypeMeta,
+		Response: &admission.AdmissionResponse{
 			UID: admissionReviewReq.Request.UID,
 		},
 	}
