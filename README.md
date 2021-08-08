@@ -79,7 +79,7 @@ $ kubectl logs pod-with-override
 I am running as user 0
 ```
 
-5. Attempt to deploy [a pod](examples/pod-with-conflict.yaml) that has a conflicting setting: `runAsNonRoot` set to `true`, but `runAsUser` set to false.
+5. Attempt to deploy [a pod](examples/pod-with-conflict.yaml) that has a conflicting setting: `runAsNonRoot` set to `true`, but `runAsUser` set to 0 (root).
 The admission controller should block the creation of that pod.
 ```
 $ kubectl create -f examples/pod-with-conflict.yaml 
