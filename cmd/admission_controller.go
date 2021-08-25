@@ -73,6 +73,7 @@ func isIgnoredNamespaceByAnnotation(nsName string) bool {
 	if annotation == "" {
 		return false
 	}
+  
 	ns, err := GetConfig().Namespaces.Get(context.Background(), nsName, metav1.GetOptions{})
 	if err != nil {
 		log.Printf("Could not get namespace:%s Error: %s", nsName, err)
