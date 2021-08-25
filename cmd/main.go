@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"k8s.io/api/admission/v1beta1"
+	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,7 +56,7 @@ func random() int {
 // not conflict with the `runAsUser` setting - i.e., if the former is set to `true`, the latter must not be `0`.
 // Note that we combine both the setting of defaults and the check for potential conflicts in one webhook; ideally,
 // the latter would be performed in a validating webhook admission controller.
-func applySecurityDefaults(req *v1beta1.AdmissionRequest) ([]patchOperation, error) {
+func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 	// This handler should only get called on Pod objects as per the MutatingWebhookConfiguration in the YAML file.
 	// However, if (for whatever reason) this gets invoked on an object of a different kind, issue a log message but
 	// let the object request pass through otherwise.
