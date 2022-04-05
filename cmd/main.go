@@ -103,6 +103,26 @@ func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 		return nil, errors.New("runAsNonRoot specified, but runAsUser set to 0 (the root user)")
 	}
 
+	for i, container := range pod.Spec.Containers {
+		if container.SecurityContext == nil {
+			allowPrivileged := false
+			defaultContext := corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+				AllowPrivilegeEscalation: &allowPrivileged,
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
+			patches = append(patches, patchOperation{
+				Op:    "add",
+				Path:  fmt.Sprintf("/spec/containers/%d/securityContext", i),
+				Value: defaultContext,
+			})
+		}
+	}
 	return patches, nil
 }
 
