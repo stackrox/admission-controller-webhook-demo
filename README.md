@@ -102,3 +102,17 @@ If you want to modify the webhook server for testing purposes, be sure to set an
 the shell environment variable `IMAGE` to an image tag for which you have push access. You can then
 build and push the image by running `make push-image`. Also make sure to change the image tag
 in `deployment/deployment.yaml.template`, and if necessary, add image pull secrets.
+
+## PodSecurity admission controller
+
+Because of new admission controller in Kubernetes this admission controller adds following securityContext by default to container if the securityContext does not exists beforehand.
+
+```yaml
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      seccompProfile:
+        type: RuntimeDefault
+``
