@@ -48,7 +48,7 @@ run: build
 
 build-linux-amd64:
 	rm -rf bin/linux/$(OPERATOR_NAME)
-	GO111MODULE=on GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -i -o bin/linux/$(OPERATOR_NAME) ./cmd
+	GO111MODULE=on GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -v -o bin/linux/$(OPERATOR_NAME) ./cmd
 
 build:
 	rm -f bin/$(OPERATOR_NAME)
