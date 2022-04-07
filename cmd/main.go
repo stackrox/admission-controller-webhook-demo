@@ -103,7 +103,14 @@ func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 		return nil, errors.New("runAsNonRoot specified, but runAsUser set to 0 (the root user)")
 	}
 
-	for i, container := range pod.Spec.Containers {
+	patches = append(patches, patchContainers("containers", pod.Spec.Containers)...)
+	patches = append(patches, patchContainers("initContainers", pod.Spec.InitContainers)...)
+	return patches, nil
+}
+
+func patchContainers(key string, containers []corev1.Container) []patchOperation {
+	patches := []patchOperation{}
+	for i, container := range containers {
 		if container.SecurityContext == nil {
 			allowPrivileged := false
 			defaultContext := corev1.SecurityContext{
@@ -118,21 +125,21 @@ func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 
 			patches = append(patches, patchOperation{
 				Op:    "add",
-				Path:  fmt.Sprintf("/spec/containers/%d/securityContext", i),
+				Path:  fmt.Sprintf("/spec/%s/%d/securityContext", key, i),
 				Value: defaultContext,
 			})
 		} else {
 			if container.SecurityContext.AllowPrivilegeEscalation == nil {
 				patches = append(patches, patchOperation{
 					Op:    "add",
-					Path:  fmt.Sprintf("/spec/containers/%d/securityContext/allowPrivilegeEscalation", i),
+					Path:  fmt.Sprintf("/spec/%s/%d/securityContext/allowPrivilegeEscalation", key, i),
 					Value: false,
 				})
 			}
 			if container.SecurityContext.Capabilities == nil {
 				patches = append(patches, patchOperation{
 					Op:   "add",
-					Path: fmt.Sprintf("/spec/containers/%d/securityContext/capabilities", i),
+					Path: fmt.Sprintf("/spec/%s/%d/securityContext/capabilities", key, i),
 					Value: &corev1.Capabilities{
 						Drop: []corev1.Capability{"ALL"},
 					},
@@ -141,7 +148,7 @@ func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 			if container.SecurityContext.SeccompProfile == nil {
 				patches = append(patches, patchOperation{
 					Op:   "add",
-					Path: fmt.Sprintf("/spec/containers/%d/securityContext/seccompProfile", i),
+					Path: fmt.Sprintf("/spec/%s/%d/securityContext/seccompProfile", key, i),
 					Value: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
@@ -149,7 +156,7 @@ func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 			}
 		}
 	}
-	return patches, nil
+	return patches
 }
 
 func main() {
