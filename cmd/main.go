@@ -121,6 +121,32 @@ func applySecurityDefaults(req *v1.AdmissionRequest) ([]patchOperation, error) {
 				Path:  fmt.Sprintf("/spec/containers/%d/securityContext", i),
 				Value: defaultContext,
 			})
+		} else {
+			if container.SecurityContext.AllowPrivilegeEscalation == nil {
+				patches = append(patches, patchOperation{
+					Op:    "add",
+					Path:  fmt.Sprintf("/spec/containers/%d/securityContext/allowPrivilegeEscalation", i),
+					Value: false,
+				})
+			}
+			if container.SecurityContext.Capabilities == nil {
+				patches = append(patches, patchOperation{
+					Op:   "add",
+					Path: fmt.Sprintf("/spec/containers/%d/securityContext/capabilities", i),
+					Value: &corev1.Capabilities{
+						Drop: []corev1.Capability{"ALL"},
+					},
+				})
+			}
+			if container.SecurityContext.SeccompProfile == nil {
+				patches = append(patches, patchOperation{
+					Op:   "add",
+					Path: fmt.Sprintf("/spec/containers/%d/securityContext/seccompProfile", i),
+					Value: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				})
+			}
 		}
 	}
 	return patches, nil
