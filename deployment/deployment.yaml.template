@@ -53,7 +53,7 @@ metadata:
 webhooks:
   - name: webhook-server.webhook-demo.svc
     sideEffects: None
-    admissionReviewVersions: ["v1", "v1beta1"]
+    admissionReviewVersions: ["v1"]
     clientConfig:
       service:
         name: webhook-server
