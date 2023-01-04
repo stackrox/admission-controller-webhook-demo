@@ -46,7 +46,7 @@ spec:
     - port: 443
       targetPort: webhook-api
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: demo-webhook
