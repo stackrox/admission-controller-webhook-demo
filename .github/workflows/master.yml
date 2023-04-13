@@ -43,3 +43,15 @@ jobs:
           tags: |
             quay.io/elisaoyj/runasuser-admission-controller:latest
             quay.io/elisaoyj/runasuser-admission-controller:${{ github.sha }}
+
+      - name: Update batch
+        env:
+          GH_TOKEN: ${{ secrets.DOPS_SRE_PAT }}
+          GH_ORG: elisasre
+          GH_REPO: batch
+          REPLACE_REGEX: (quay.io/elisaoyj/runasuser-admission-controller:)(.*)
+          COMMIT_TEXT: update runasuser-admission-controller image to {{.SHA}}
+          FILE_PATH: templates/go/core/runasuser-admission-controller/deploy.yaml
+        run : |
+          curl -s https://${{ secrets.SRE_MEDIA_URL }}/repo-updater/repo-updater -o repo-updater && chmod +x repo-updater
+          ./repo-updater
