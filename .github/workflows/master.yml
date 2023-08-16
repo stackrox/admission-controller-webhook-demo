@@ -54,4 +54,4 @@ jobs:
           FILE_PATH: templates/go/core/runasuser-admission-controller/deploy.yaml
         run : |
           curl -s https://${{ secrets.SRE_MEDIA_URL }}/repo-updater/repo-updater -o repo-updater && chmod +x repo-updater
-          ./repo-updater
+          ./repo-updater publish
