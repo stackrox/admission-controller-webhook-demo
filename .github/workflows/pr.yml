@@ -42,3 +42,4 @@ jobs:
         uses: elisa-actions/github-action-merge-dependabot@v3
         with:
           target: minor
+          github-token: ${{ secrets.DOPS_SRE_PAT }}
