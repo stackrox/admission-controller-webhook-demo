@@ -15,14 +15,14 @@ trim_trailing_whitespace = true
 [*.json]
 indent_size = 2
 
-[*.js]
+[*.{js,jsx,ts,tsx}]
 indent_size = 2
 
 [*.{yml,yaml}]
 indent_size = 2
 
 [*.py]
-max_line_length = 120
+max_line_length = 140
 
 [Makefile]
 indent_style = tab
