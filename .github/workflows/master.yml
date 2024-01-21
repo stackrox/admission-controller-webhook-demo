@@ -14,7 +14,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.18.x
+          go-version: 1.21.x
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -26,12 +26,12 @@ jobs:
           make test
           make build-linux-amd64
 
-      - name: Login to Quay.io
+      - name: Login to Google Artifact Registry
         uses: docker/login-action@v3
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_TOKEN }}
+          registry: europe-north1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GAR_JSON_KEY }}
 
       - name: Build and push to registry
         uses: docker/build-push-action@v5
@@ -39,15 +39,15 @@ jobs:
           context: .
           push: true
           tags: |
-            quay.io/elisaoyj/runasuser-admission-controller:latest
-            quay.io/elisaoyj/runasuser-admission-controller:${{ github.sha }}
+            europe-north1-docker.pkg.dev/sose-sre-5737/sre-public/runasuser-admission-controller:latest
+            europe-north1-docker.pkg.dev/sose-sre-5737/sre-public/runasuser-admission-controller:sha-${{ github.sha }}
 
       - name: Update batch
         env:
           GH_TOKEN: ${{ secrets.DOPS_SRE_PAT }}
           GH_ORG: elisasre
           GH_REPO: batch
-          REPLACE_REGEX: (quay.io/elisaoyj/runasuser-admission-controller:)(.*)
+          REPLACE_REGEX: (europe-north1-docker.pkg.dev/sose-sre-5737/sre-public/runasuser-admission-controller:sha-)(.*)
           COMMIT_TEXT: update runasuser-admission-controller image to {{.SHA}}
           FILE_PATH: templates/go/core/runasuser-admission-controller/deploy.yaml
         run : |
